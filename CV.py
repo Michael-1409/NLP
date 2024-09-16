@@ -1,78 +1,50 @@
-import nltk
-import spacy
-from transformers import pipeline
+import cv2
+import numpy as np
 
-# Download necessary NLTK data
-nltk.download('punkt')
-nltk.download('wordnet')
-nltk.download('averaged_perceptron_tagger')
+# 1. Load an image
+def load_image(image_path):
+    image = cv2.imread(image_path)  # Load image in color (default)
+    if image is None:
+        print("Error: Unable to load image.")
+        return None
+    return image
 
-from nltk.tokenize import word_tokenize, sent_tokenize
-from nltk.corpus import wordnet
-from nltk.stem import WordNetLemmatizer
-from nltk import pos_tag
+# 2. Convert image to grayscale
+def convert_to_grayscale(image):
+    return cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
 
-# Initialize SpaCy model for advanced NLP tasks
-nlp = spacy.load('en_core_web_sm')
+# 3. Detect edges using Canny edge detection
+def detect_edges(image, low_threshold=50, high_threshold=150):
+    return cv2.Canny(image, low_threshold, high_threshold)
 
-# Initialize transformers pipeline for sentiment analysis
-sentiment_analyzer = pipeline('sentiment-analysis')
+# 4. Display the image in a window
+def display_image(window_name, image):
+    cv2.imshow(window_name, image)
+    cv2.waitKey(0)  # Wait indefinitely until a key is pressed
+    cv2.destroyAllWindows()  # Close the window after key press
 
-# 1. Tokenization
-def tokenize_text(text):
-    word_tokens = word_tokenize(text)
-    sentence_tokens = sent_tokenize(text)
-    return word_tokens, sentence_tokens
-
-# 2. Lemmatization
-def get_wordnet_pos(treebank_tag):
-    if treebank_tag.startswith('J'):
-        return wordnet.ADJ
-    elif treebank_tag.startswith('V'):
-        return wordnet.VERB
-    elif treebank_tag.startswith('N'):
-        return wordnet.NOUN
-    elif treebank_tag.startswith('R'):
-        return wordnet.ADV
-    else:
-        return wordnet.NOUN
-
-def lemmatize_text(text):
-    lemmatizer = WordNetLemmatizer()
-    word_tokens = word_tokenize(text)
-    pos_tags = pos_tag(word_tokens)
-    
-    lemmatized_words = [lemmatizer.lemmatize(word, get_wordnet_pos(pos)) for word, pos in pos_tags]
-    return lemmatized_words
-
-# 3. Named Entity Recognition (NER) using SpaCy
-def named_entity_recognition(text):
-    doc = nlp(text)
-    entities = [(ent.text, ent.label_) for ent in doc.ents]
-    return entities
-
-# 4. Sentiment Analysis using Hugging Face Transformers
-def analyze_sentiment(text):
-    sentiment = sentiment_analyzer(text)
-    return sentiment
+# 5. Save the processed image to disk
+def save_image(output_path, image):
+    cv2.imwrite(output_path, image)
+    print(f"Image saved to {output_path}")
 
 # Example usage
 if __name__ == "__main__":
-    text = "Apple is looking at buying U.K. startup for $1 billion. The weather today is great!"
-
-    # Tokenization
-    words, sentences = tokenize_text(text)
-    print("Word Tokens:", words)
-    print("Sentence Tokens:", sentences)
+    image_path = 'input_image.jpg'  # Replace with your image path
+    output_path = 'output_image.jpg'
     
-    # Lemmatization
-    lemmatized_words = lemmatize_text(text)
-    print("Lemmatized Words:", lemmatized_words)
-    
-    # Named Entity Recognition (NER)
-    entities = named_entity_recognition(text)
-    print("Named Entities:", entities)
-    
-    # Sentiment Analysis
-    sentiment = analyze_sentiment(text)
-    print("Sentiment Analysis:", sentiment)
+    # Load and display the original image
+    image = load_image(image_path)
+    if image is not None:
+        display_image("Original Image", image)
+        
+        # Convert to grayscale
+        gray_image = convert_to_grayscale(image)
+        display_image("Grayscale Image", gray_image)
+        
+        # Detect edges
+        edges_image = detect_edges(gray_image)
+        display_image("Edges Detected", edges_image)
+        
+        # Save the edges image
+        save_image(output_path, edges_image)
